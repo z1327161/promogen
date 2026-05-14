@@ -10,6 +10,8 @@ def save_and_fetch_promo(article_id, ui_promo_data):
         
         # FIX: Point to 'PromotionData' instead of 'ArticleInfo'
         collection = db['PromotionData']
+        article_collection = db['ArticleInfo']
+        
         
         # Ensure the article_id is part of the data being saved
         ui_promo_data["article_id"] = article_id
@@ -22,8 +24,19 @@ def save_and_fetch_promo(article_id, ui_promo_data):
             upsert=True
         )
         
-        # Retrieve the updated record to pass to Vertex AI
+        # Retrieve the updated record to pass to Vertex AI [cite: 29]
         full_promo = collection.find_one({"article_id": article_id})
+        # 3. Fetch the corresponding Article Info
+        # Note: Ensure the field name in ArticleInfo is also "article_id" 
+        article_info = article_collection.find_one({"article_id": article_id})
+        
+        if full_promo and article_info:
+            # Remove the MongoDB internal _id if you don't want duplicates in the merge
+            article_info.pop('_id', None)
+            
+            # Merge Article Info into the Promotion Data object
+            full_promo["article_details"] = article_info
+            
         return full_promo
         
     except Exception as e:
