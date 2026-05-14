@@ -3,3 +3,4 @@ uvicorn[standard]==0.46.0
 pymongo==4.17.0
 google-cloud-aiplatform==1.152.0
 pydantic==2.13.4
+google-cloud-discoveryengine==0.19.0
