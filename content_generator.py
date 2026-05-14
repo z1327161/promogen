@@ -25,10 +25,8 @@ def get_vertex_outputs(mongo_data):
         
         # 2. Build the resource name for the default data store/session
         # For Agent Builder, the path usually points to the 'servingConfig'
-        #serving_config = f"projects/{PROJECT_ID}/locations/{AGENT_LOCATION}/collections/default_collection/engines/{AGENT_ID}/servingConfigs/default_serving_config"
-        # Try this simplified path first
-        serving_config = f"projects/{PROJECT_ID}/locations/{AGENT_LOCATION}/engines/{AGENT_ID}/servingConfigs/default_serving_config"
-
+        serving_config = f"projects/{PROJECT_ID}/locations/{AGENT_LOCATION}/collections/default_collection/engines/{AGENT_ID}/servingConfigs/default_serving_config"
+        
         # 3. Create the query based on your MongoDB data
         user_query = f"Analyze this promotion data and generate content: {mongo_data}"
         
