@@ -16,26 +16,44 @@ def get_vertex_outputs(mongo_data):
     try:
         model = GenerativeModel("gemini-2.5-flash")
 
-        prompt = f"""You are a retail promotion specialist. Given the following promotion data, generate:
-A multibuy deal A6 size image
+        prompt = f"""Role: You are a Professional Retail Graphic Designer.
+Task: Generate a high-resolution A6 promotional sign by mapping values from the provided JSON input to the layout rules below.
 
-1. Layout & Color Palette:
-Split Background: The sign is divided into two distinct horizontal sections.
-Header (Top 25%): Vibrant Lime-Green background.
-Body (Bottom 75%): Vibrant Cyan-Blue background.
-The Speech Bubble: A large, horizontal "speech bubble" graphic is centered, overlapping both colors. It has a thick yellow border and a dark green interior. Inside this bubble, the text "MULTIBUY DEALS" is written in a heavy, bold, white sans-serif font with a subtle drop shadow.
+1. Global Visual Identity (Apply to ALL images)
+Layout: Vertical A6 composition. Split background: Top 25% is Vibrant Lime-Green; Bottom 75% is Vibrant Cyan-Blue.
 
-2. Branding:
-Logo: In the top green header, place a logo consisting of three curved "leaf" strokes (Red, Yellow, Green) forming a circle, followed by the word "freshchoice" in a clean, white, lowercase sans-serif font.
-Location: In the bottom right corner of the blue section, the word "Auckland" is written in small, clean white text.
-3. Dynamic Product Block (Central White Card): In the center of the blue section, there is a large, clean White Rectangular Card. Populate it with these details from the JSON:
+Branding: In the green header, place the "freshchoice" logo (three curved leaf strokes in Red, Yellow, and Green forming a circle, followed by "freshchoice" in white lowercase sans-serif).
 
-Product Title: [Article_Name] in bold, black, all-caps, centered at the top.
-Value Badge: Directly below the title, a bright Red pill-shaped badge with the text "GREAT VALUE" in bold white letters.
-Yellow Deal Box: A large, bright Yellow rectangle fills the middle of the white card. Inside, display: "ANY 2 FOR $[Calculated Price]". The numerals for the price must be very large, black, and heavy.
-Footer Info:
-Bottom Left: "Unit Price: $[Standard_Price]" and "Valid until 31/12/2026" in tiny black font.
-Bottom Right: The word "AUCKLAND" in tiny black capital letters.
+The Speech Bubble: Centered, overlapping the green/blue divide, is a horizontal speech bubble with a thick yellow border and dark green interior.
+
+2. Conditional Logic (Based on promotion-type)
+Identify the promotion-type from the JSON and apply the corresponding text and layout:
+
+IF "multibuy": * Bubble Text: "MULTIBUY DEALS" (Bold, white, heavy sans-serif).
+
+Yellow Deal Box: Display "ANY [Quantity] FOR $[Calculated_Price]".
+
+IF "discount": * Bubble Text: "SPECIAL OFFER" (Bold, white, heavy sans-serif).
+
+Yellow Deal Box: Display "NOW $[Discounted_Price]". Below it, in smaller font: "SAVE $[Savings]".
+
+IF "clearance": * Bubble Text: "CLEARANCE" (Bold, white, heavy sans-serif).
+
+Yellow Deal Box: Display "WAS $[Standard_Price] NOW $[Clearance_Price]".
+
+3. Central Product Card (White Rectangular Insert)
+Place a clean white rectangular card in the center of the blue section. Populate it with:
+
+Product Name: [Article_Name] in bold, black, all-caps at the top.
+
+Value Badge: A bright Red pill-shaped badge directly below the title with the text "GREAT VALUE" in white.
+
+The Deal Box: The Bright Yellow Rectangle described in the logic above. The currency and numerals must be the largest, heaviest elements on the card.
+
+4. Mandatory Footer (Tiny Black Text)
+Bottom Left: "Unit Price: $[Standard_Price]" | "Valid until [end_Date]"
+
+Bottom Right: "AUCKLAND".
 
 Promotion data: {mongo_data}
 
