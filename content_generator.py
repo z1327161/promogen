@@ -15,7 +15,7 @@ def get_vertex_outputs(mongo_data):
     try:
         model = GenerativeModel("gemini-1.5-flash")
 
-        prompt = f"""You are a retail promotions specialist. Given the following promotion data, generate:
+        prompt = f"""You are a retail promotion specialist. Given the following promotion data, generate:
 1. An image prompt suitable for an AI image generator (describe a shelf-talker or promotional display image).
 2. Shelf-talker copy (short, punchy promotional text for an in-store label).
 3. A suggested label stationery template based on the promotion type.
