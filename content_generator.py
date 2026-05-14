@@ -1,5 +1,6 @@
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
+from vertexai.preview.vision_models import ImageGenerationModel
 
 # --- CONFIGURATION ---
 PROJECT_ID = "gcp-wow-wwnz-edr-reactpoc-test"
@@ -33,6 +34,24 @@ Respond in JSON with keys: "image_prompt", "shelf_talker_copy", "template_sugges
 
     except Exception as e:
         return {"error": f"Gemini call failed: {str(e)}"}
+
+def generate_promotional_image(image_prompt: str) -> bytes | None:
+    """
+    Generates a promotional image from a text prompt using Imagen 3 on Vertex AI.
+    Returns raw image bytes (JPEG), or None on failure.
+    """
+    try:
+        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+        images = model.generate_images(
+            prompt=image_prompt,
+            number_of_images=1,
+            aspect_ratio="1:1",
+            safety_filter_level="block_some",
+        )
+        return images[0]._image_bytes
+    except Exception as e:
+        print(f"Imagen generation failed: {e}")
+        return None
 
 def verify_promotion_compliance(image_bytes, promo_data):
     """

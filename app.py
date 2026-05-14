@@ -1,4 +1,6 @@
 import os
+import json
+import base64
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +8,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from db_handler import save_and_fetch_promo, get_articles_by_category, get_all_categories, get_all_articles
-from content_generator import get_vertex_outputs, verify_promotion_compliance
+from content_generator import get_vertex_outputs, generate_promotional_image, verify_promotion_compliance
 
 app = FastAPI(
     title="PromoGen API",
@@ -106,13 +108,30 @@ async def handle_promo(article_id: str, promo: PromotionRequest):
     if "_id" in full_data:
         full_data["_id"] = str(full_data["_id"])
 
-    # Step B: Generate assets via Vertex AI Agent
+    # Step B: Generate text assets via Gemini
     ai_results = get_vertex_outputs(full_data)
     if "error" in ai_results:
         raise HTTPException(status_code=500, detail=ai_results["error"])
 
-    # Step C: Select label stationery based on promotion type
-    label_stationery = "Standard White"
+    # Parse the JSON string returned by Gemini
+    ai_output_text = ai_results.get("ai_output", "{}")
+    # Strip markdown code fences if present
+    ai_output_text = ai_output_text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    try:
+        ai_content = json.loads(ai_output_text)
+    except json.JSONDecodeError:
+        ai_content = {"image_prompt": ai_output_text, "shelf_talker_copy": "", "template_suggestion": ""}
+
+    image_prompt = ai_content.get("image_prompt", "")
+    shelf_talker_copy = ai_content.get("shelf_talker_copy", "")
+    template_suggestion = ai_content.get("template_suggestion", "")
+
+    # Step C: Generate promotional image via Imagen 3
+    image_bytes = generate_promotional_image(image_prompt) if image_prompt else None
+    image_b64 = base64.b64encode(image_bytes).decode() if image_bytes else None
+
+    # Step D: Select label stationery based on promotion type
+    label_stationery = template_suggestion or "Standard White"
     p_type_lower = full_data.get("promotion_type", "").lower()
     if "multi buy" in p_type_lower:
         label_stationery = "Multi-Buy Yellow Stationery"
@@ -121,8 +140,8 @@ async def handle_promo(article_id: str, promo: PromotionRequest):
     elif "member" in p_type_lower:
         label_stationery = "Exclusive Member Blue Stationery"
 
-    # Step D: Compliance audit
-    compliance_report = verify_promotion_compliance(None, full_data)
+    # Step E: Compliance audit
+    compliance_report = verify_promotion_compliance(image_bytes, full_data)
 
     return {
         "status": "success",
@@ -132,8 +151,9 @@ async def handle_promo(article_id: str, promo: PromotionRequest):
             "required_stationery": label_stationery,
         },
         "generated_assets": {
-            "ai_image_url": ai_results.get("ai_image_url"),
-            "shelf_talker_copy": ai_results.get("shelf_talker_copy"),
+            "image_prompt": image_prompt,
+            "shelf_talker_copy": shelf_talker_copy,
+            "image_base64": image_b64,
         },
         "compliance_audit": {
             "status": "Verified",
@@ -146,4 +166,3 @@ async def handle_promo(article_id: str, promo: PromotionRequest):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
-
