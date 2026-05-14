@@ -13,7 +13,7 @@ def get_vertex_outputs(mongo_data):
     Calls Gemini to generate promotional image prompts and shelf-talker copy.
     """
     try:
-        model = GenerativeModel("gemini-1.5-flash")
+        model = GenerativeModel("gemini-2.5-flash")
 
         prompt = f"""You are a retail promotion specialist. Given the following promotion data, generate:
 1. An image prompt suitable for an AI image generator (describe a shelf-talker or promotional display image).
