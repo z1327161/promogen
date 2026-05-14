@@ -1,59 +1,38 @@
 import vertexai
-# CHANGED: Use the stable import path
-from google.cloud import discoveryengine
 from vertexai.generative_models import GenerativeModel, Part
 
 # --- CONFIGURATION ---
 PROJECT_ID = "gcp-wow-wwnz-edr-reactpoc-test"
 LOCATION = "us-central1"
 
-# Agent Builder (Agent Platform Studio) lives in the same region as Vertex AI
-AGENT_LOCATION = "us-central1"
-AGENT_ID = "agent_1778658051045" # Full agent ID including the 'agent_' prefix
-
 # Initialize Vertex AI
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 def get_vertex_outputs(mongo_data):
     """
-    Calls the Vertex AI Agent (Studio/Agent Builder) using the
-    Conversational Search Service.
+    Calls Gemini to generate promotional image prompts and shelf-talker copy.
     """
     try:
-        # 1. Setup the client with regional endpoint
-        client = discoveryengine.ConversationalSearchServiceClient(
-            client_options={"api_endpoint": f"{AGENT_LOCATION}-discoveryengine.googleapis.com"}
-        )
+        model = GenerativeModel("gemini-1.5-flash")
 
-        # 2. Build the resource name for the default data store/session
-        # For Agent Builder, the path usually points to the 'servingConfig'
-        serving_config = f"projects/{PROJECT_ID}/locations/{AGENT_LOCATION}/collections/default_collection/engines/{AGENT_ID}/servingConfigs/default_serving_config"
+        prompt = f"""You are a retail promotions specialist. Given the following promotion data, generate:
+1. An image prompt suitable for an AI image generator (describe a shelf-talker or promotional display image).
+2. Shelf-talker copy (short, punchy promotional text for an in-store label).
+3. A suggested label stationery template based on the promotion type.
 
-        # 3. Create the query based on your MongoDB data
-        user_query = f"Analyze this promotion data and generate content: {mongo_data}"
+Promotion data: {mongo_data}
 
-        query = discoveryengine.Query(text=user_query)
+Respond in JSON with keys: "image_prompt", "shelf_talker_copy", "template_suggestion"."""
 
-        request = discoveryengine.AnswerQueryRequest(
-            serving_config=serving_config,
-            query=query,
-        )
+        response = model.generate_content(prompt)
 
-        # 4. Execute the request
-        response = client.answer_query(request)
-
-        # Extract the text from the agent's answer
-        answer_text = response.answer.answer_text
-
-        # Note: Since Studio Agents return text, you may need to parse
-        # the response if the agent returns JSON-like strings.
         return {
-            "ai_output": answer_text,
+            "ai_output": response.text,
             "status": "success"
         }
 
     except Exception as e:
-        return {"error": f"Agent Builder call failed: {str(e)}"}
+        return {"error": f"Gemini call failed: {str(e)}"}
 
 def verify_promotion_compliance(image_bytes, promo_data):
     """
